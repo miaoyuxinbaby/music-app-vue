@@ -88,9 +88,7 @@ export default {
       getRecommendSongMenu()
         .then((res) => {
           if (res.code === CODE) {
-            setTimeout(() => {
-              this.SongMenu = res.data.list
-            }, 3000)
+            this.SongMenu = res.data.list
           }
         }, (err) => {
           console.log(err)
