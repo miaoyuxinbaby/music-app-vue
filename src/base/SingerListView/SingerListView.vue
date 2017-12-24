@@ -14,6 +14,7 @@
         <ul>
           <li v-for="(item, index) in items.items"
               :key="index"
+              @click="selectItem(item)"
               class="list-group-item">
             <img v-lazy="item.imgUrl">
             <span>{{item.name}}</span>
@@ -32,6 +33,9 @@
             :data-index="index">{{item}}
         </li>
       </ul>
+    </div>
+    <div ref="fixed" v-show="fixedTitle" class="list-fixed">
+      <div>{{fixedTitle}}</div>
     </div>
   </Scroll>
 </template>
@@ -68,9 +72,18 @@ export default {
       return this.data.map((item) => {
         return item.title.substr(0, 1)
       })
+    },
+    fixedTitle () {
+      if (this.scrollY > 0) return ''
+      return this.data[this.currentIndex]
+              ? this.data[this.currentIndex].title
+              : ''
     }
   },
   methods: {
+    selectItem (item) {
+      this.$emit('select', item)
+    },
     onShortListTouchStart (e) {
       let anchorIndex = customDataAPI(e.target, 'index')
       this.touch.y1 = e.touches[0].pageY
@@ -134,65 +147,68 @@ export default {
 </script>
 
 <style lang="stylus" scoped>
-@import '~@/common/stylus/variable';
+@import '~@/common/stylus/variable'
 
-.SingerListView {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: $color-background;
+.SingerListView 
+  position relative
+  width 100%
+  height 100%
+  overflow hidden
+  background $color-background
 
-  .list-group {
-    padding-bottom: 30px;
-  }
+  .list-group 
+    padding-bottom 30px
 
-  .list-group-title {
-    height: 30px;
-    line-height: 30px;
-    padding-left: 20px;
-    color: $color-text-l;
-    background: $color-highlight-background;
-  }
+  .list-group-title 
+    height 30px
+    line-height 30px
+    padding-left 20px
+    color $color-text-l
+    background $color-highlight-background
 
-  .list-group-item {
-    display: flex;
-    align-items: center;
-    padding: 20px 0 0 30px;
+  .list-group-item 
+    display flex
+    align-items center
+    padding 20px 0 0 30px
 
-    img {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-    }
+    img 
+      width 50px
+      height 50px
+      border-radius 50%
+    span 
+      margin-left 20px
 
-    span {
-      margin-left: 20px;
-    }
-  }
+  .list-short 
+    position absolute
+    right 0
+    top 50%
+    transform translateY(-50%)
+    width 20px
+    padding 20px 3px
+    border-radius 10px
+    text-align center
+    background $color-background-d
+    font-family Helvetica
 
-  .list-short {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 20px;
-    padding: 20px 3px;
-    border-radius: 10px;
-    text-align: center;
-    background: $color-background-d;
-    font-family: Helvetica;
+    li 
+      padding 3px
+      line-height 1
+      color $color-text-l
+      font-size $font-size-medium
 
-    li {
-      padding: 3px;
-      line-height: 1;
-      color: $color-text-l;
-      font-size: $font-size-medium;
+      &.current 
+        color $color-text-y
 
-      &.current {
-        color: $color-text-y;
-      }
-    }
-  }
-}
+  .list-fixed 
+    position absolute
+    top 0
+    left 0
+    width 100%
+    div
+      height 30px
+      line-height 30px
+      padding-left 20px
+      font-size $font-size-medium
+      color: $color-text-l
+      background $color-highlight-background
 </style>

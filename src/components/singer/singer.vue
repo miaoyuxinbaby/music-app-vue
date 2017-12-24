@@ -1,6 +1,7 @@
 <template>
   <div class="singer">
-    <singer-list-view :data="singerList"></singer-list-view>
+    <singer-list-view :data="singerList" @select="selectSinger"></singer-list-view>
+    <router-view></router-view>
   </div>
 </template>
 
@@ -9,6 +10,7 @@ import { getSingerList } from '@/api/singer'
 import { CODE } from '@/api/config'
 import Singer from '@/common/js/singer'
 import SingerListView from '@/base/SingerListView/SingerListView'
+import { mapMutations } from 'vuex'
 
 const HOT_TITLE = '热门'
 const HOT_SINGER_LENGTH = 10
@@ -26,6 +28,12 @@ export default {
     this._getSingerList()
   },
   methods: {
+    selectSinger (item) {
+      this.setSinger(item)
+      this.$router.push({
+        path: `/singer/${item.id}`
+      })
+    },
     _getSingerList () {
       getSingerList()
         .then((res) => {
@@ -78,7 +86,10 @@ export default {
         })
       }
       return hot.concat(ret)
-    }
+    },
+    ...mapMutations({
+      setSinger: 'SET_SINGER'
+    })
   }
 }
 </script>
