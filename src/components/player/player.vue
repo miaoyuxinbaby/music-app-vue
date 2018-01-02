@@ -14,25 +14,32 @@
       <div class="middle">
         <div class="middle-l">
           <div class="cd-wrapper">
-            <div class="cd">
+            <div class="cd" :class="cdCls">
               <img class="image" :src="currentSong.image">
             </div>
           </div>
         </div>
       </div>
       <div class="bottom">
+        <div class="progress-wrapper">
+          <span class="time time-l">{{_formatTime(currentTime)}}</span>
+          <div class="progress-bar-wrapper">
+            <progress-bar :percent="percent" @percentChange="onProgressBarChange"></progress-bar>
+          </div>
+          <span class="time time-l">{{_formatTime(currentSong.duration)}}</span>
+        </div>
         <div class="operators">
           <div class="icon i-left">
             <i class="icon-sequence"></i>
           </div>
-          <div class="icon i-left">
-            <i class="icon-prev"></i>
+          <div class="icon i-left" :class="disableClass">
+            <i @click="prev" class="icon-prev"></i>
           </div>
-          <div class="icon i-center">
+          <div class="icon i-center" :class="disableClass">
             <i @click="togglePlaying" :class="playIcon"></i>
           </div>
-          <div class="icon i-right">
-            <i class="icon-next"></i>
+          <div class="icon i-right" :class="disableClass">
+            <i @click="next" class="icon-next"></i>
           </div>
           <div class="icon i-right">
             <i class="icon-not-favorite"></i>
@@ -41,7 +48,7 @@
       </div>
     </div>
     <div class="mini-player" v-show="!fullScreen" @click="open">
-      <div class="icon">
+      <div class="icon" :class="cdCls">
         <img width="40" height="40" :src="currentSong.image">
       </div>
       <div class="text">
@@ -55,25 +62,48 @@
         <i class="icon-playlist"></i>
       </div>
     </div>
-    <audio :src="currentSong.url" ref="audio"></audio>
+    <audio
+      :src="currentSong.url"
+      ref="audio"
+      @canplay="ready"
+      @error="error"
+      @timeupdate="updateTime">
+    </audio>
   </div>
 </template>
 
 <script>
 import { mapGetters, mapMutations } from 'vuex'
+import ProgressBar from '@/base/progress-bar/progress-bar'
 export default {
+  data () {
+    return {
+      songReady: false,
+      currentTime: 0
+    }
+  },
   computed: {
     ...mapGetters([
       'fullScreen',
       'playList',
       'currentSong',
-      'playing'
+      'playing',
+      'currentIndex'
     ]),
     playIcon () {
       return this.playing ? 'icon-pause' : 'icon-play'
     },
     playIconMini () {
       return this.playing ? 'icon-pause-mini' : 'icon-play-mini'
+    },
+    disableClass () {
+      return this.songReady ? '' : 'disable'
+    },
+    percent () {
+      return this.currentTime / this.currentSong.duration
+    },
+    cdCls () {
+      return this.playing ? 'play' : 'play pause'
     }
   },
   watch: {
@@ -84,6 +114,10 @@ export default {
     }
   },
   methods: {
+    onProgressBarChange (percent) {
+      this.$refs.audio.currentTime = this.currentSong.duration * percent
+      if (!this.playing) this.togglePlaying()
+    },
     back () {
       this.setFullScreen(false)
     },
@@ -102,10 +136,53 @@ export default {
       this.setPlaying(!this.playing)
       this.$refs.audio.play()
     },
+    prev () {
+      if (!this.songReady) return
+      let index = this.currentIndex - 1
+      if (index === this.playList.length) index = this.playList.length - 1
+      this.setCurrentIndex(index)
+      if (!this.playing) this.toPlay()
+      this.songReady = false
+    },
+    next () {
+      if (!this.songReady) return
+      let index = this.currentIndex + 1
+      if (index === this.playList.length) index = 0
+      this.setCurrentIndex(index)
+      if (!this.playing) this.toPlay()
+      this.songReady = false
+    },
+    ready () {
+      this.songReady = true
+    },
+    error () {
+      this.songReady = true
+    },
+    updateTime (e) {
+      this.currentTime = e.target.currentTime
+    },
+    _formatTime (interval) {
+      interval = interval | 0
+      const minute = (interval / 60) | 0
+      const second = this._pad0(interval % 60)
+      return minute + ':' + second
+    },
+    _pad0 (num, n = 2) {
+      let len = num.toString().length
+      while (len < n) {
+        num = '0' + num
+        len++
+      }
+      return num
+    },
     ...mapMutations({
       setFullScreen: 'SET_FULL_SCREEN',
-      setPlaying: 'SET_PLAYING'
+      setPlaying: 'SET_PLAYING',
+      setCurrentIndex: 'SET_CURRENTINDEX'
     })
+  },
+  components: {
+    ProgressBar
   }
 }
 </script>
