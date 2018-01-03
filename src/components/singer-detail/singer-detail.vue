@@ -31,7 +31,6 @@ export default {
     ])
   },
   created () {
-    console.log(this.singer)
     this._getSingerDetail()
   },
   methods: {
@@ -40,9 +39,7 @@ export default {
       getSingerDetail(this.singer.id)
         .then((res) => {
           if (res.code === CODE) {
-            console.log(res.data)
             this.songs = this._normalizeSongs(res.data.list)
-            console.log(this.songs)
           }
         })
     },
