@@ -1,5 +1,5 @@
 <template>
-  <div class="recommend">
+  <div class="recommend" ref="recommend">
     <Scroll :data="SongMenu" ref="scroll" class="recommend-content">
       <div>
         <swiper :options="swiperOption" ref="mySwiper">
@@ -40,9 +40,11 @@ import 'swiper/dist/css/swiper.css'
 import { swiper, swiperSlide } from 'vue-awesome-swiper'
 import { getRecommend, getRecommendSongMenu } from '@/api/recommend'
 import { CODE } from '@/api/config'
+import { playListMixin } from '@/common/js/mixin'
 import Scroll from '@/base/scroll/scroll'
 import Loading from '@/base/loading/loading'
 export default {
+  mixins: [playListMixin],
   name: 'recommend',
   components: {
     swiper,
@@ -67,15 +69,17 @@ export default {
     this._getRecommend()
     this._getRecommendSongMenu()
   },
-  mounted () {
-
-  },
   computed: {
     swiper () {
       return this.$refs.mySwiper.swiper
     }
   },
   methods: {
+    handlePlaylist (playingList) {
+      const bottom = playingList.length > 0 ? '50px' : ''
+      this.$refs.recommend.style.bottom = bottom
+      this.$refs.scroll.refresh()
+    },
     _getRecommend () {
       getRecommend()
         .then((res) => {

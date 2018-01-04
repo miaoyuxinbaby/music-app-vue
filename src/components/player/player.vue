@@ -11,16 +11,44 @@
         <h1 class="title" v-html="currentSong.name"></h1>
         <h2 class="subtitle" v-html="currentSong.singer"></h2>
       </div>
-      <div class="middle">
-        <div class="middle-l">
+      <div 
+        @touchstart="middleTouchStart"
+        @touchmove="middleTouchMove"
+        @touchend="middleTouchEnd"
+        class="middle">
+        <div class="middle-l" ref="middleL">
           <div class="cd-wrapper">
             <div class="cd" :class="cdCls">
               <img class="image" :src="currentSong.image">
             </div>
           </div>
+          <div class="playing-lyric-wrapper">
+            <div class="playing-lyric">{{playingLyric}}</div>
+          </div>
         </div>
+        <scroll
+          ref="lyricList"
+          :data="currentLyric && currentLyric.lines"
+          class="middle-r" >
+          <div class="lyric-wrapper">
+            <div v-if="currentLyric">
+              <p
+                v-for="(line, index) in currentLyric.lines"
+                :key="index"
+                :class="{'current': currentLineNum === index}"
+                ref="lyricLine" 
+                class="text">
+                {{line.txt}}
+              </p>
+            </div>
+          </div>
+        </scroll>
       </div>
       <div class="bottom">
+        <div class="dot-wrapper">
+          <span class="dot" :class="{'active': currentShow === 'cd'}"></span>
+          <span class="dot" :class="{'active': currentShow === 'lyric'}"></span>
+        </div>
         <div class="progress-wrapper">
           <span class="time time-l">{{_formatTime(currentTime)}}</span>
           <div class="progress-bar-wrapper">
@@ -79,13 +107,19 @@
 import { mapGetters, mapMutations } from 'vuex'
 import { playMode } from '@/common/js/config'
 import { shuffle } from '@/common/js/util'
+import Lyric from 'lyric-parser'
 import ProgressBar from '@/base/progress-bar/progress-bar'
 import ProgressCircle from '@/base/progress-circle/progress-circle'
+import Scroll from '@/base/scroll/scroll'
 export default {
   data () {
     return {
       songReady: false,
-      currentTime: 0
+      currentTime: 0,
+      currentLyric: null,
+      currentLineNum: 0,
+      currentShow: 'cd',
+      playingLyric: ''
     }
   },
   computed: {
@@ -121,15 +155,63 @@ export default {
                               : 'icon-random'
     }
   },
+  created () {
+    this.touch = {}
+  },
   watch: {
     currentSong (newSong, oldSong) {
       if (newSong.id === oldSong.id) return
+      if (this.currentLyric) this.currentLyric.stop()
       this.$nextTick(() => {
         this.$refs.audio.play()
+        this._getLyric()
       })
     }
   },
   methods: {
+    middleTouchStart (e) {
+      this.touch.initiated = true
+      this.touch.startX = e.touches[0].pageX
+      this.touch.startY = e.touches[0].pageY
+    },
+    middleTouchMove (e) {
+      if (!this.touch.initiated) return
+      const deltaX = e.touches[0].pageX - this.touch.startX
+      const deltaY = e.touches[0].pageY - this.touch.startY
+      if (Math.abs(deltaY) > Math.abs(deltaX)) return
+      const left = this.currentShow === 'cd' ? 0 : -window.innerWidth
+      const offsetWidth = Math.min(0, Math.max(-window.innerWidth, left + deltaX))
+      this.touch.percent = Math.abs(offsetWidth / window.innerWidth)
+      this.$refs.lyricList.$el.style.transform = `translate3d(${offsetWidth}px,0,0)`
+      this.$refs.lyricList.$el.style.transition = 'all 0s'
+      this.$refs.middleL.style.transition = 'all 0s'
+      this.$refs.middleL.style.opacity = 1 - this.touch.percent
+    },
+    middleTouchEnd () {
+      let offsetWidth
+      let opacity
+      if (this.currentShow === 'cd') {
+        if (this.touch.percent > 0.1) {
+          offsetWidth = -window.innerWidth
+          opacity = 0
+          this.currentShow = 'lyric'
+        } else {
+          offsetWidth = 0
+        }
+      } else {
+        if (this.touch.percent < 0.9) {
+          offsetWidth = 0
+          opacity = 1
+          this.currentShow = 'cd'
+        } else {
+          offsetWidth = -window.innerWidth
+        }
+      }
+      this.$refs.lyricList.$el.style.transform = `translate3d(${offsetWidth}px,0,0)`
+      this.$refs.lyricList.$el.style.transition = 'all 0.5s'
+      this.$refs.middleL.style.transition = 'all 0.5s'
+      this.$refs.middleL.style.opacity = opacity
+    },
     end () {
       if (this.mode === playMode.loop) this.loop()
       else this.next()
@@ -137,6 +219,7 @@ export default {
     loop () {
       this.$refs.audio.currentTime = 0
       this.$refs.audio.play()
+      if (this.currentLyric) this.currentLyric.seek()
     },
     // 播放模式改变
     changeMode () {
@@ -155,8 +238,10 @@ export default {
       this.setCurrentIndex(index)
     },
     onProgressBarChange (percent) {
-      this.$refs.audio.currentTime = this.currentSong.duration * percent
+      const currentTime = this.currentSong.duration * percent
+      this.$refs.audio.currentTime = currentTime
       if (!this.playing) this.togglePlaying()
+      if (this.currentLyric) this.currentLyric.seek(currentTime * 1000)
     },
     back () {
       this.setFullScreen(false)
@@ -167,6 +252,7 @@ export default {
     togglePlaying () {
       this.playing ? this.toPause()
                    : this.toPlay()
+      if (this.currentLyric) this.currentLyric.togglePlay()
     },
     toPause () {
       this.setPlaying(!this.playing)
@@ -178,18 +264,24 @@ export default {
     },
     prev () {
       if (!this.songReady) return
-      let index = this.currentIndex - 1
-      if (index === this.playList.length) index = this.playList.length - 1
-      this.setCurrentIndex(index)
-      if (!this.playing) this.toPlay()
+      if (this.playList.length === 1) this.loop()
+      else {
+        let index = this.currentIndex - 1
+        if (index === this.playList.length) index = this.playList.length - 1
+        this.setCurrentIndex(index)
+        if (!this.playing) this.toPlay()
+      }
       this.songReady = false
     },
     next () {
       if (!this.songReady) return
-      let index = this.currentIndex + 1
-      if (index === this.playList.length) index = 0
-      this.setCurrentIndex(index)
-      if (!this.playing) this.toPlay()
+      if (this.playList.length === 1) this.loop()
+      else {
+        let index = this.currentIndex + 1
+        if (index === this.playList.length) index = 0
+        this.setCurrentIndex(index)
+        if (!this.playing) this.toPlay()
+      }
       this.songReady = false
     },
     ready () {
@@ -200,6 +292,30 @@ export default {
     },
     updateTime (e) {
       this.currentTime = e.target.currentTime
+    },
+    handleLyric ({lineNum, txt}) {
+      this.currentLineNum = lineNum
+      if (lineNum > 5) {
+        let lineEl = this.$refs.lyricLine[lineNum - 5]
+        this.$refs.lyricList.scrollToElement(lineEl, 1000)
+      } else {
+        this.$refs.lyricList.scrollToElement(0, 0, 1000)
+      }
+      this.playingLyric = txt
+    },
+    _getLyric () {
+      this.currentSong._getLyric()
+        .then((res) => {
+          this.currentLyric = new Lyric(res, this.handleLyric)
+          if (this.playing) {
+            this.currentLyric.play()
+          }
+        })
+        .catch(() => {
+          this.currentLyric = null
+          this.playingLyric = ''
+          this.currentLineNum = 0
+        })
     },
     _formatTime (interval) {
       interval = interval | 0
@@ -225,7 +341,8 @@ export default {
   },
   components: {
     ProgressBar,
-    ProgressCircle
+    ProgressCircle,
+    Scroll
   }
 }
 </script>
@@ -319,7 +436,7 @@ export default {
 
           .playing-lyric-wrapper
             width 80%
-            margin 30px auto 0 auto
+            margin 50px auto 0 auto
             overflow hidden
             text-align center
             .playing-lyric
@@ -358,11 +475,11 @@ export default {
             width 8px
             height 8px
             border-radius 50%
-            background $color-text-l
+            background $color-text-ll
             &.active
               width 20px
               border-radius 5px
-              background $color-text-ll
+              background $color-text
         .progress-wrapper
           display flex
           align-items center

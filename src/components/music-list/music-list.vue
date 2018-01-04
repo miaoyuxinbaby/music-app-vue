@@ -36,9 +36,11 @@
   import SongList from '@/base/song-list/song-list'
   import Loading from '@/base/loading/loading'
   import { mapActions } from 'vuex'
+  import { playListMixin } from '@/common/js/mixin'
 
   const RESERVED_HEIGHT = 40
   export default {
+    mixins: [playListMixin],
     props: {
       bgImage: {
         type: String,
@@ -101,6 +103,11 @@
       }
     },
     methods: {
+      handlePlaylist (playingList) {
+        const bottom = playingList.length > 0 ? '50px' : ''
+        this.$refs.list.$el.style.bottom = bottom
+        this.$refs.list.refresh()
+      },
       randomPlayMusic () {
         this.randomPlay({
           list: this.songs

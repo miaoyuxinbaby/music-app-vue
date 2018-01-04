@@ -81,6 +81,9 @@ export default {
     }
   },
   methods: {
+    refresh () {
+      this.$refs.ListView.refresh()
+    },
     selectItem (item) {
       this.$emit('select', item)
     },
