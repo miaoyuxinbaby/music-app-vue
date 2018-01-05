@@ -16,7 +16,11 @@
         <div class="recommend-list">
           <h1 class="list-title">热门歌单推荐</h1>
           <ul>
-            <li v-for="item in SongMenu" :key="item.dissid" class="item">
+            <li 
+              v-for="item in SongMenu" 
+              :key="item.dissid" 
+              @click="selectItem(item)"
+              class="item">
               <div class="icon">
                 <img v-lazy="item.imgurl" width="60" height="60">
               </div>
@@ -32,6 +36,7 @@
         <Loading></Loading> 
       </div>
     </Scroll>
+    <router-view></router-view>
   </div>
 </template>
 
@@ -43,6 +48,7 @@ import { CODE } from '@/api/config'
 import { playListMixin } from '@/common/js/mixin'
 import Scroll from '@/base/scroll/scroll'
 import Loading from '@/base/loading/loading'
+import { mapMutations } from 'vuex'
 export default {
   mixins: [playListMixin],
   name: 'recommend',
@@ -75,6 +81,13 @@ export default {
     }
   },
   methods: {
+    selectItem (item) {
+      this.$router.push({
+        path: `/recommend/${item.dissid}`
+        // 路由间跳转可以用vuex通信。
+      })
+      this.setDisc(item)
+    },
     handlePlaylist (playingList) {
       const bottom = playingList.length > 0 ? '50px' : ''
       this.$refs.recommend.style.bottom = bottom
@@ -102,7 +115,11 @@ export default {
       if (this.Imageisload) return
       this.$refs.scroll.refresh()
       this.Imageisload = true
+    },
+    ...mapMutations({
+      setDisc: 'SET_DISC'
     }
+    )
   }
 }
 </script>
