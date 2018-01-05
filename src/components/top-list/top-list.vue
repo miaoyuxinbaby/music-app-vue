@@ -5,11 +5,11 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import { getSingerDetail } from '@/api/singer'
-import { CODE } from '@/api/config'
 import { createSong } from '@/common/js/song'
+import { mapGetters } from 'vuex'
 import MusicList from '@/components/music-list/music-list'
+import { getMusicList } from '@/api/rank'
+import { CODE } from '@/api/config'
 export default {
   data () {
     return {
@@ -21,35 +21,32 @@ export default {
   },
   computed: {
     title () {
-      return this.singer.name
+      return this.topList.topTitle
     },
     bgImage () {
-      return this.singer.imgUrl
+      if (this.songs.length) return this.songs[0].image
+      else return this.topList.picUrl
     },
     ...mapGetters([
-      'singer'
+      'topList'
     ])
   },
   created () {
-    this._getSingerDetail()
+    this._getMusicList()
   },
   methods: {
-    _getSingerDetail () {
-      if (!this.singer.id) return this.$router.push('/singer')
-      getSingerDetail(this.singer.id)
-        .then((res) => {
-          if (res.code === CODE) {
-            this.songs = this._normalizeSongs(res.data.list)
-          }
+    _getMusicList () {
+      if (!this.topList.id) return this.$router.push('/rank')
+      getMusicList(this.topList.id)
+        .then(res => {
+          if (res.code === CODE) this.songs = this._normalizeSongs(res.songlist)
         })
     },
     _normalizeSongs (list) {
       let ret = []
       list.forEach(item => {
-        let {musicData} = item
-        if (musicData.songid && musicData.albumid) {
-          ret.push(createSong(musicData))
-        }
+        const musicData = item.data
+        if (musicData.songid && musicData.albumid) ret.push(createSong(musicData))
       })
       return ret
     }
