@@ -23,6 +23,10 @@ export default {
     listenScroll: {
       type: Boolean,
       default: false
+    },
+    pullup: {
+      type: Boolean,
+      default: false
     }
   },
   mounted () {
@@ -41,6 +45,15 @@ export default {
         let _self = this
         this.scroll.on('scroll', (position) => {
           _self.$emit('scroll', position)
+        })
+      }
+      if (this.pullup) {
+        // 监听onscrollend事件。当滚动结束时触发
+        this.scroll.on('scrollEnd', () => {
+          // 手指释放时滚动坐标小于最大坐标+偏移50
+          if (this.scroll.y <= (this.scroll.maxScrollY + 50)) {
+            this.$emit('scrollToEnd')
+          }
         })
       }
     },

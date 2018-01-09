@@ -3,7 +3,7 @@ import Router from 'vue-router'
 import Recommend from '@/components/recommend/recommend'
 import Singer from '@/components/Singer/Singer'
 import Rank from '@/components/rank/rank'
-// import Search from '@/components/search/search'
+import Search from '@/components/search/search'
 import SingerDetail from '@/components/singer-detail/singer-detail'
 import Disc from '@/components/disc/disc'
 import TopList from '@/components/top-list/top-list'
@@ -44,6 +44,16 @@ export default new Router({
         {
           path: ':id',
           component: TopList
+        }
+      ]
+    },
+    {
+      path: '/search',
+      component: Search,
+      children: [
+        {
+          path: ':id',
+          component: SingerDetail
         }
       ]
     }
