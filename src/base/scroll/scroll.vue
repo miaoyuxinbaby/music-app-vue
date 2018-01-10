@@ -27,6 +27,10 @@ export default {
     pullup: {
       type: Boolean,
       default: false
+    },
+    beforeScroll: {
+      type: Boolean,
+      default: false
     }
   },
   mounted () {
@@ -54,6 +58,12 @@ export default {
           if (this.scroll.y <= (this.scroll.maxScrollY + 50)) {
             this.$emit('scrollToEnd')
           }
+        })
+      }
+      // 滚动前触发事件，这里用来让Input失去焦点
+      if (this.beforeScroll) {
+        this.scroll.on('beforeScroll', () => {
+          this.$emit('beforeScroll')
         })
       }
     },

@@ -1,8 +1,10 @@
 <template>
   <scroll :data="result"
           :pullup="pullup"
+          :beforeScroll="beforeScroll"
           ref="suggest"
           @scrollToEnd="searchMore"
+          @beforeScroll="listScroll"
           class="suggest">
     <ul class="suggest-list">
       <li 
@@ -19,6 +21,9 @@
       </li>
       <loading v-show="hasmore"></loading>
     </ul>
+    <div class="no-result-wrapper" v-show="!hasmore && result.length === 0">
+      <no-result title="没有找到歌曲哦"></no-result>
+    </div>
   </scroll>
 </template>
 
@@ -29,6 +34,7 @@ import { createSong } from '@/common/js/song'
 import Scroll from '@/base/scroll/scroll'
 import Loading from '@/base/loading/loading'
 import Singer from '@/common/js/singer'
+import NoResult from '@/base/no-result/no-result'
 import { mapMutations, mapActions } from 'vuex'
 
 const TYPE_SINGER = 'singer'
@@ -37,7 +43,8 @@ const PERPAGE = 20
 export default {
   components: {
     Scroll,
-    Loading
+    Loading,
+    NoResult
   },
   props: {
     query: {
@@ -54,7 +61,8 @@ export default {
       page: 1,
       result: [],
       pullup: true,
-      hasmore: false
+      hasmore: true,
+      beforeScroll: true
     }
   },
   watch: {
@@ -63,6 +71,9 @@ export default {
     }
   },
   methods: {
+    listScroll () {
+      this.$emit('listScroll')
+    },
     selectItem (item) {
       if (item.type === TYPE_SINGER) {
         const singer = new Singer({
@@ -76,6 +87,7 @@ export default {
       } else {
         this.insertSong(item)
       }
+      this.$emit('select')
     },
     searchMore () {
       if (!this.hasmore) return
@@ -83,7 +95,7 @@ export default {
       search(this.query, this.page, this.showSinger, PERPAGE)
         .then(res => {
           if (res.code === CODE) this.result = this.result.concat(this._genResult(res.data))
-          this._checkMove(res.data)
+          this._checkMore(res.data)
         })
     },
     getIconCls (item) {
@@ -94,17 +106,18 @@ export default {
     },
     _search () {
       // 修改关键词时 重置配置项
-      this.hasmore = true
       this.page = 1
+      this.hasmore = true
       this.$refs.suggest.scrollTo(0, 0)
       search(this.query, this.page, this.showSinger, PERPAGE)
         .then(res => {
-          if (res.code === CODE) this.result = this._genResult(res.data)
+          if (res.code === CODE) {
+            this.result = this._genResult(res.data)
+            this._checkMore(res.data)
+          }
         })
-      // 解决query === '' 时的loading显示bug
-      if (this.query === '') this.hasmore = false
     },
-    _checkMove (data) {
+    _checkMore (data) {
       const song = data.song
       const isNoMore = !song.list.length || (song.curnum + song.curpage * PERPAGE) > song.totalnum
       if (isNoMore) this.hasmore = false

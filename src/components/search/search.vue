@@ -12,15 +12,15 @@
               v-for="(item, index) in hotkey"
               :key="index"
               @click="addQuery(item.k)"
-              class="item">
+              class="item needsclick">
               <span>{{item.k}}</span>
             </li>
           </ul>
         </div>
       </div>
     </div>
-    <div class="search-result">
-      <suggest :query="query"></suggest>
+    <div class="search-result" v-show="query">
+      <suggest :query="query" @listScroll="blurInput" @select="saveSearch"></suggest>
     </div>
     <router-view></router-view>
   </div>
@@ -31,6 +31,7 @@ import SearchBox from '@/base/search-box/search-box'
 import Suggest from '@/components/suggest/suggest'
 import { getHotKey } from '@/api/search'
 import { CODE } from '@/api/config'
+import { mapActions } from 'vuex'
 
 export default {
   components: {
@@ -47,6 +48,12 @@ export default {
     }
   },
   methods: {
+    saveSearch () {
+      this.saveSearchHistory(this.query)
+    },
+    blurInput () {
+      this.$refs.searchBox.blur()
+    },
     addQuery (val) {
       this.$refs.searchBox.setQuery(val)
     },
@@ -58,7 +65,10 @@ export default {
         .then(res => {
           if (res.code === CODE) this.hotkey = res.data.hotkey.slice(0, 10)
         })
-    }
+    },
+    ...mapActions([
+      'saveSearchHistory'
+    ])
   }
 }
 </script>
