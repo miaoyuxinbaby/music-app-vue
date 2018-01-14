@@ -88,10 +88,11 @@
           <i :class="playIconMini" class="icon-mini"></i>
         </progress-circle>
       </div>
-      <div class="control">
+      <div class="control" @click.stop="showPlaylist">
         <i class="icon-playlist"></i>
       </div>
     </div>
+    <play-list-dom ref="playListDom"></play-list-dom>
     <audio
       :src="currentSong.url"
       ref="audio"
@@ -111,6 +112,7 @@ import Lyric from 'lyric-parser'
 import ProgressBar from '@/base/progress-bar/progress-bar'
 import ProgressCircle from '@/base/progress-circle/progress-circle'
 import Scroll from '@/base/scroll/scroll'
+import PlayListDom from '@/components/playlist/playlist'
 export default {
   data () {
     return {
@@ -169,6 +171,9 @@ export default {
     }
   },
   methods: {
+    showPlaylist () {
+      this.$refs.playListDom.show()
+    },
     middleTouchStart (e) {
       this.touch.initiated = true
       this.touch.startX = e.touches[0].pageX
@@ -342,7 +347,8 @@ export default {
   components: {
     ProgressBar,
     ProgressCircle,
-    Scroll
+    Scroll,
+    PlayListDom
   }
 }
 </script>
