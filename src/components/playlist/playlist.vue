@@ -6,14 +6,14 @@
           <h1 class="title">
             <i class="icon"></i>
             <span class="text"></span>
-            <span class="clear"><i class="icon-clear"></i></span>
+            <span class="clear" @click="showConfirm"><i class="icon-clear"></i></span>
           </h1>
         </div>
         <scroll :data="sequenceList" ref="listContent" class="list-content">
-          <ul name="list" tag="ul">
+          <transition-group name="list" tag="ul">
             <li
               v-for="(item, index) in sequenceList"
-              :key="index"
+              :key="item.id"
               @click="selectItem(item, index)"
               class="item">
               <i class="current" :class="getCurrentIcon(item)"></i>
@@ -21,14 +21,14 @@
               <span class="like">
                 <i class="icon-not-favorite"></i>
               </span>
-              <span class="delete">
+              <span class="delete" @click.stop="deleteOne(item)">
                 <i class="icon-delete"></i>
               </span>
             </li>
-          </ul>
+          </transition-group>
         </scroll>
         <div class="list-operate">
-          <div class="add">
+          <div class="add" @click="addSong">
             <i class="icon-add"></i>
             <span class="text">添加歌曲到队列</span>
           </div>
@@ -37,13 +37,17 @@
           <span>关闭</span>
         </div>
       </div>
+      <confirm @confirm="confirmClear" ref="confirm" text="是否清空播放列表" confirmBtnText="清空"></confirm> 
+      <add-song ref="addSong"></add-song>
     </div>
   </transition>
 </template>
 
 <script>
-  import { mapGetters, mapMutations } from 'vuex'
+  import { mapGetters, mapMutations, mapActions } from 'vuex'
   import Scroll from '@/base/scroll/scroll'
+  import Confirm from '@/base/confirm/confirm'
+  import AddSong from '@/components/add-song/add-song'
   import { playMode } from '@/common/js/config'
 
   export default {
@@ -53,7 +57,9 @@
       }
     },
     components: {
-      Scroll
+      Scroll,
+      Confirm,
+      AddSong
     },
     computed: {
       ...mapGetters([
@@ -84,10 +90,30 @@
           })
         }
         this.setCurrentIndex(index)
+        this.setPlaying(true)
+      },
+      deleteOne (item) {
+        this.deleteSong(item)
+        if (!this.playList.length) this.hide()
+      },
+      showConfirm () {
+        this.$refs.confirm.show()
+      },
+      confirmClear () {
+        this.deleteSongList()
+        this.hide()
+      },
+      addSong () {
+        this.$refs.addSong.show()
       },
       ...mapMutations({
-        'setCurrentIndex': 'SET_CURRENTINDEX'
-      })
+        'setCurrentIndex': 'SET_CURRENTINDEX',
+        'setPlaying': 'SET_PLAYING'
+      }),
+      ...mapActions([
+        'deleteSong',
+        'deleteSongList'
+      ])
     }
   }
 </script>

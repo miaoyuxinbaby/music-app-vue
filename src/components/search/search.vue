@@ -45,13 +45,13 @@ import SearchBox from '@/base/search-box/search-box'
 import Suggest from '@/components/suggest/suggest'
 import { getHotKey } from '@/api/search'
 import { CODE } from '@/api/config'
-import { mapActions, mapGetters } from 'vuex'
+import { mapActions } from 'vuex'
 import SearchList from '@/base/search-list/search-list'
 import Scroll from '@/base/scroll/scroll'
-import { playListMixin } from '@/common/js/mixin'
+import { playListMixin, searchMixin } from '@/common/js/mixin'
 
 export default {
-  mixins: [playListMixin],
+  mixins: [playListMixin, searchMixin],
   components: {
     SearchBox,
     Suggest,
@@ -64,10 +64,7 @@ export default {
   computed: {
     shortCut () {
       return this.hotkey.concat(this.saveSearchHistory)
-    },
-    ...mapGetters([
-      'searchHistory'
-    ])
+    }
   },
   watch: {
     query (newQuery) {
@@ -80,8 +77,7 @@ export default {
   },
   data () {
     return {
-      hotkey: [],
-      query: ''
+      hotkey: []
     }
   },
   methods: {
@@ -92,23 +88,11 @@ export default {
       this.$refs.searchResult.style.bottom = bottom
       this.$refs.suggest.refresh()
     },
-    saveSearch () {
-      this.saveSearchHistory(this.query)
-    },
     deleteOne (item) {
       this.deletaSearchHistory(item)
     },
     deleteAll () {
       this.clearSearchHistory()
-    },
-    blurInput () {
-      this.$refs.searchBox.blur()
-    },
-    addQuery (val) {
-      this.$refs.searchBox.setQuery(val)
-    },
-    onQueryChange (query) {
-      this.query = query
     },
     _getHotKey () {
       getHotKey()
@@ -117,8 +101,6 @@ export default {
         })
     },
     ...mapActions([
-      'saveSearchHistory',
-      'deletaSearchHistory',
       'clearSearchHistory'
     ])
   }
