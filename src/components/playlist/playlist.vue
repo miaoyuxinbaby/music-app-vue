@@ -9,7 +9,7 @@
             <span class="clear" @click="showConfirm"><i class="icon-clear"></i></span>
           </h1>
         </div>
-        <scroll :data="sequenceList" ref="listContent" class="list-content">
+        <scroll :refreshDelay="refreshDelay" :data="sequenceList" ref="listContent" class="list-content">
           <transition-group name="list" tag="ul">
             <li
               v-for="(item, index) in sequenceList"
@@ -18,8 +18,8 @@
               class="item">
               <i class="current" :class="getCurrentIcon(item)"></i>
               <span class="text">{{item.name}}</span>
-              <span class="like">
-                <i class="icon-not-favorite"></i>
+              <span class="like" @click.stop="toggleFavorite(item)">
+                <i :class="getFavoriteIcon(item)"></i>
               </span>
               <span class="delete" @click.stop="deleteOne(item)">
                 <i class="icon-delete"></i>
@@ -49,11 +49,13 @@
   import Confirm from '@/base/confirm/confirm'
   import AddSong from '@/components/add-song/add-song'
   import { playMode } from '@/common/js/config'
-
+  import { favoriteMixin } from '@/common/js/mixin'
   export default {
+    mixins: [favoriteMixin],
     data () {
       return {
-        showFlag: false
+        showFlag: false,
+        refreshDelay: 100
       }
     },
     components: {

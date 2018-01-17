@@ -1,12 +1,54 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import Recommend from '@/components/recommend/recommend'
-import Singer from '@/components/Singer/Singer'
-import Rank from '@/components/rank/rank'
-import Search from '@/components/search/search'
-import SingerDetail from '@/components/singer-detail/singer-detail'
-import Disc from '@/components/disc/disc'
-import TopList from '@/components/top-list/top-list'
+// Code Splitting
+const Recommend = (resolve) => {
+  import('@/components/recommend/recommend')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const Singer = (resolve) => {
+  import('@/components/Singer/Singer')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const Rank = (resolve) => {
+  import('@/components/rank/rank')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const Search = (resolve) => {
+  import('@/components/search/search')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const SingerDetail = (resolve) => {
+  import('@/components/singer-detail/singer-detail')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const Disc = (resolve) => {
+  import('@/components/disc/disc')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const TopList = (resolve) => {
+  import('@/components/top-list/top-list')
+    .then((res) => {
+      resolve(res)
+    })
+}
+const UserCenter = (resolve) => {
+  import('@/components/user-center/user-center')
+    .then((res) => {
+      resolve(res)
+    })
+}
 
 Vue.use(Router)
 
@@ -56,6 +98,10 @@ export default new Router({
           component: SingerDetail
         }
       ]
+    },
+    {
+      path: '/user',
+      component: UserCenter
     }
   ]
 })

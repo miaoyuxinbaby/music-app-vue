@@ -70,7 +70,7 @@
             <i @click="next" class="icon-next"></i>
           </div>
           <div class="icon i-right">
-            <i class="icon-not-favorite"></i>
+            <i class="icon" :class="getFavoriteIcon(currentSong)" @click="toggleFavorite(currentSong)"></i>
           </div>
         </div>
       </div>
@@ -105,7 +105,7 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from 'vuex'
+import { mapGetters, mapMutations, mapActions } from 'vuex'
 import { playMode } from '@/common/js/config'
 import { shuffle } from '@/common/js/util'
 import Lyric from 'lyric-parser'
@@ -113,7 +113,9 @@ import ProgressBar from '@/base/progress-bar/progress-bar'
 import ProgressCircle from '@/base/progress-circle/progress-circle'
 import Scroll from '@/base/scroll/scroll'
 import PlayListDom from '@/components/playlist/playlist'
+import { favoriteMixin } from '@/common/js/mixin'
 export default {
+  mixins: [favoriteMixin],
   data () {
     return {
       songReady: false,
@@ -270,7 +272,7 @@ export default {
     },
     prev () {
       if (!this.songReady) return
-      if (this.playList.length === 1) this.loop()
+      if (this.playList.length === 1) return this.loop()
       else {
         let index = this.currentIndex - 1
         if (index === this.playList.length) index = this.playList.length - 1
@@ -281,7 +283,7 @@ export default {
     },
     next () {
       if (!this.songReady) return
-      if (this.playList.length === 1) this.loop()
+      if (this.playList.length === 1) return this.loop()
       else {
         let index = this.currentIndex + 1
         if (index === this.playList.length) index = 0
@@ -292,6 +294,7 @@ export default {
     },
     ready () {
       this.songReady = true
+      this.savePlayHistory(this.currentSong)
     },
     error () {
       this.songReady = true
@@ -312,6 +315,7 @@ export default {
     _getLyric () {
       this.currentSong._getLyric()
         .then((res) => {
+          if (this.currentSong.lyric !== res) return
           this.currentLyric = new Lyric(res, this.handleLyric)
           if (this.playing) {
             this.currentLyric.play()
@@ -343,7 +347,10 @@ export default {
       setCurrentIndex: 'SET_CURRENTINDEX',
       setPlayMode: 'SET_MODE',
       setPlayList: 'SET_PLAYLIST'
-    })
+    }),
+    ...mapActions([
+      'savePlayHistory'
+    ])
   },
   components: {
     ProgressBar,
